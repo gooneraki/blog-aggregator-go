@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 )
 
 type command struct {
@@ -12,21 +11,6 @@ type command struct {
 
 type commands struct {
 	registeredCommands map[string]func(*state, command) error
-}
-
-func handlerLogin(s *state, cmd command) error {
-	if len(cmd.Args) != 1 {
-		return fmt.Errorf("usage: %s <name>", cmd.Name)
-	}
-	name := cmd.Args[0]
-
-	err := s.cfg.SetUser(name)
-	if err != nil {
-		return fmt.Errorf("couldn't set current user: %w", err)
-	}
-
-	fmt.Println("User switched successfully!")
-	return nil
 }
 
 func (c *commands) run(s *state, cmd command) error {
