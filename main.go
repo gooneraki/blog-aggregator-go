@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"os"
 
 	"github.com/gooneraki/blog-aggregator-go/internal/config"
 )
@@ -12,16 +12,29 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Printf("Read config: %+v\n", cfg)
 
-	err = cfg.SetUser("gooneraki")
-	if err != nil {
-		log.Fatalf("couldn't set current user: %v", err)
+	appstate := state{
+		cfg: &cfg,
 	}
 
-	cfg, err = config.Read()
-	if err != nil {
-		log.Fatalf("error reading config: %v", err)
+	appcommands := commands{
+		handlers: make(map[string]func(*state, command) error),
 	}
-	fmt.Printf("Read config again: %+v\n", cfg)
+
+	appcommands.register("login", handlerLogin)
+
+	args := os.Args
+	if len(args) < 2 {
+		log.Fatalln("Not enough arguments were provided")
+	}
+
+	appcommand := command{
+		name: args[1],
+		args: args[2:],
+	}
+
+	err = appcommands.run(&appstate, appcommand)
+	if err != nil {
+		log.Fatalf("error running command with args '%v': %v", args, err)
+	}
 }
