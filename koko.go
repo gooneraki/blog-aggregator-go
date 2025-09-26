@@ -1,51 +1,42 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/gooneraki/blog-aggregator-go/internal/config"
 )
 
-type state struct {
-	cfg *config.Config
-}
-
 type command struct {
-	name string
-	args []string
+	Name string
+	Args []string
 }
 
 type commands struct {
-	handlers map[string]func(*state, command) error
+	registeredCommands map[string]func(*state, command) error
 }
 
 func handlerLogin(s *state, cmd command) error {
-	if len(cmd.args) == 0 {
-		return fmt.Errorf("error: expect username argument")
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: %s <name>", cmd.Name)
 	}
+	name := cmd.Args[0]
 
-	username := cmd.args[0]
-	err := s.cfg.SetUser(username)
+	err := s.cfg.SetUser(name)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't set current user: %w", err)
 	}
 
-	fmt.Printf("User '%s' has been set\n", username)
+	fmt.Println("User switched successfully!")
 	return nil
 }
 
 func (c *commands) run(s *state, cmd command) error {
-	handler, exists := c.handlers[cmd.name]
-	if !exists {
-		return fmt.Errorf("error: command '%s' not found", cmd.name)
+	f, ok := c.registeredCommands[cmd.Name]
+	if !ok {
+		return errors.New("command not found")
 	}
-	return handler(s, cmd)
+	return f(s, cmd)
 }
 
 func (c *commands) register(name string, f func(*state, command) error) {
-	if c.handlers == nil {
-		c.handlers = make(map[string]func(*state, command) error)
-	}
-
-	c.handlers[name] = f
+	c.registeredCommands[name] = f
 }

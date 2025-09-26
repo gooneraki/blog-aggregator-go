@@ -7,34 +7,34 @@ import (
 	"github.com/gooneraki/blog-aggregator-go/internal/config"
 )
 
+type state struct {
+	cfg *config.Config
+}
+
 func main() {
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
 
-	appstate := state{
+	programState := &state{
 		cfg: &cfg,
 	}
 
-	appcommands := commands{
-		handlers: make(map[string]func(*state, command) error),
+	cmds := commands{
+		registeredCommands: make(map[string]func(*state, command) error),
+	}
+	cmds.register("login", handlerLogin)
+
+	if len(os.Args) < 2 {
+		log.Fatal("Usage: cli <command> [args...]")
 	}
 
-	appcommands.register("login", handlerLogin)
+	cmdName := os.Args[1]
+	cmdArgs := os.Args[2:]
 
-	args := os.Args
-	if len(args) < 2 {
-		log.Fatalln("Not enough arguments were provided")
-	}
-
-	appcommand := command{
-		name: args[1],
-		args: args[2:],
-	}
-
-	err = appcommands.run(&appstate, appcommand)
+	err = cmds.run(programState, command{Name: cmdName, Args: cmdArgs})
 	if err != nil {
-		log.Fatalf("error running command with args '%v': %v", args, err)
+		log.Fatal(err)
 	}
 }
