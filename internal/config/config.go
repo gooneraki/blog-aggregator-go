@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"os"
-	"path"
+	"path/filepath"
 )
 
 const configFileName = ".gatorconfig.json"
@@ -13,68 +13,59 @@ type Config struct {
 	CurrentUserName string `json:"current_user_name"`
 }
 
-func getConfigFilePath() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	return path.Join(homeDir, configFileName), nil
+func (cfg *Config) SetUser(userName string) error {
+	cfg.CurrentUserName = userName
+	return write(*cfg)
 }
 
 func Read() (Config, error) {
-	fullUrl, err := getConfigFilePath()
+	fullPath, err := getConfigFilePath()
 	if err != nil {
 		return Config{}, err
 	}
 
-	data, err := os.ReadFile(fullUrl)
+	file, err := os.Open(fullPath)
+	if err != nil {
+		return Config{}, err
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	cfg := Config{}
+	err = decoder.Decode(&cfg)
 	if err != nil {
 		return Config{}, err
 	}
 
-	var config Config
-	if err := json.Unmarshal(data, &config); err != nil {
-		return Config{}, err
+	return cfg, nil
+}
+
+func getConfigFilePath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
 	}
-
-	return config, nil
-
+	fullPath := filepath.Join(home, configFileName)
+	return fullPath, nil
 }
 
 func write(cfg Config) error {
-	fullUrl, err := getConfigFilePath()
+	fullPath, err := getConfigFilePath()
 	if err != nil {
 		return err
 	}
 
-	data, err := json.Marshal(cfg)
+	file, err := os.Create(fullPath)
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
-	if err := os.WriteFile(fullUrl, data, 0644); err != nil {
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(cfg)
+	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func SetUser(user_name string) error {
-	// Read current and assign in a variable
-	currentConfig, err := Read()
-	if err != nil {
-		return err
-	}
-
-	// Update current variable
-	currentConfig.CurrentUserName = user_name
-
-	// Save back to the json file
-	if err := write(currentConfig); err != nil {
-		return err
-	}
-
-	return nil
-
 }

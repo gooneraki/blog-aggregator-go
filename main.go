@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gooneraki/blog-aggregator-go/internal/config"
 )
@@ -9,16 +10,18 @@ import (
 func main() {
 	cfg, err := config.Read()
 	if err != nil {
-		fmt.Printf("Error reading config: %v", err)
+		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Println(cfg)
+	fmt.Printf("Read config: %+v\n", cfg)
 
-	config.SetUser("gooneraki")
+	err = cfg.SetUser("gooneraki")
+	if err != nil {
+		log.Fatalf("couldn't set current user: %v", err)
+	}
 
 	cfg, err = config.Read()
 	if err != nil {
-		fmt.Printf("Error reading config: %v", err)
+		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Println(cfg)
-
+	fmt.Printf("Read config again: %+v\n", cfg)
 }
