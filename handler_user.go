@@ -73,3 +73,23 @@ func handlerReset(s *state, cmd command) error {
 
 	return nil
 }
+func handlerUsers(s *state, cmd command) error {
+	if len(cmd.Args) != 0 {
+		return fmt.Errorf("no arguments required for users")
+	}
+
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("couldn't reset (delete all users)")
+	}
+
+	for _, value := range users {
+		fmt.Printf("* %s", value.Name)
+		if value.Name == s.cfg.CurrentUserName {
+			fmt.Print(" (current)")
+		}
+		fmt.Print("\n")
+	}
+
+	return nil
+}
