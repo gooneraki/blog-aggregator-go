@@ -56,40 +56,22 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
+func handlerListUsers(s *state, cmd command) error {
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("couldn't list users: %w", err)
+	}
+	for _, user := range users {
+		if user.Name == s.cfg.CurrentUserName {
+			fmt.Printf("* %v (current)\n", user.Name)
+			continue
+		}
+		fmt.Printf("* %v\n", user.Name)
+	}
+	return nil
+}
+
 func printUser(user database.User) {
 	fmt.Printf(" * ID:      %v\n", user.ID)
 	fmt.Printf(" * Name:    %v\n", user.Name)
-}
-
-func handlerReset(s *state, cmd command) error {
-	if len(cmd.Args) != 0 {
-		return fmt.Errorf("no arguments required for reset")
-	}
-
-	err := s.db.DeleteAllUsers(context.Background())
-	if err != nil {
-		return fmt.Errorf("couldn't reset (delete all users)")
-	}
-
-	return nil
-}
-func handlerUsers(s *state, cmd command) error {
-	if len(cmd.Args) != 0 {
-		return fmt.Errorf("no arguments required for users")
-	}
-
-	users, err := s.db.GetUsers(context.Background())
-	if err != nil {
-		return fmt.Errorf("couldn't reset (delete all users)")
-	}
-
-	for _, value := range users {
-		fmt.Printf("* %s", value.Name)
-		if value.Name == s.cfg.CurrentUserName {
-			fmt.Print(" (current)")
-		}
-		fmt.Print("\n")
-	}
-
-	return nil
 }
