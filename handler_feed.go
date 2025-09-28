@@ -39,7 +39,9 @@ func handlerAddFeed(s *state, cmd command) error {
 	fmt.Println()
 	fmt.Println("=====================================")
 
-	return nil
+	cmd.Args = []string{cmd.Args[1]}
+
+	return handlerFollow(s, cmd)
 }
 
 func handlerListFeeds(s *state, cmd command) error {
