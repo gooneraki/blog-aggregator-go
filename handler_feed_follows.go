@@ -11,62 +11,60 @@ import (
 
 func handlerFollow(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
-		return fmt.Errorf("usage: %s <url>", cmd.Name)
+		return fmt.Errorf("usage: %s <feed_url>", cmd.Name)
 	}
-
-	url := cmd.Args[0]
 
 	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
 	if err != nil {
 		return err
 	}
 
-	feed, err := s.db.GetFeedByUrl(context.Background(), url)
+	feed, err := s.db.GetFeedByUrl(context.Background(), cmd.Args[0])
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get feed: %w", err)
 	}
 
-	feed_follow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+	ffRow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
 		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		UserID:    user.ID,
 		FeedID:    feed.ID,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't create feed follow: %w", err)
 	}
 
-	fmt.Println("Feed follow is successful")
-	fmt.Println(feed_follow.CreatedAt)
-	fmt.Println(user.Name)
-	fmt.Println(feed.Name)
-
+	fmt.Println("Feed follow created:")
+	printFeedFollow(ffRow.UserName, ffRow.FeedName)
 	return nil
-
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	if len(cmd.Args) != 0 {
-		return fmt.Errorf("usage: %s (without arguments)", cmd.Name)
-	}
-
+func handlerListFeedFollows(s *state, cmd command) error {
 	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
 	if err != nil {
 		return err
 	}
 
-	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
+	feedFollows, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get feed follows: %w", err)
 	}
 
-	for _, v := range feeds {
+	if len(feedFollows) == 0 {
+		fmt.Println("No feed follows found for this user.")
+		return nil
+	}
 
-		fmt.Println(v.UserName)
-		fmt.Println(v.FeedName)
+	fmt.Printf("Feed follows for user %s:\n", user.Name)
+	for _, ff := range feedFollows {
+		fmt.Printf("* %s\n", ff.FeedName)
 	}
 
 	return nil
+}
 
+func printFeedFollow(username, feedname string) {
+	fmt.Printf("* User:          %s\n", username)
+	fmt.Printf("* Feed:          %s\n", feedname)
 }
