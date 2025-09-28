@@ -9,7 +9,7 @@ import (
 	"github.com/gooneraki/blog-aggregator-go/internal/database"
 )
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func handlerAddFeed(s *state, cmd command) error {
 
 	cmd.Args = []string{cmd.Args[1]}
 
-	return handlerFollow(s, cmd)
+	return handlerFollow(s, cmd, user)
 }
 
 func handlerListFeeds(s *state, cmd command) error {
