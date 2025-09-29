@@ -1,0 +1,185 @@
+# Gator - Blog Aggregator CLI
+
+Gator is a command-line RSS feed aggregator written in Go that allows you to collect, manage, and browse blog posts from multiple RSS feeds. The application stores feeds and posts in a PostgreSQL database and provides a simple CLI interface for interacting with your aggregated content.
+
+## Prerequisites
+
+Before you can run Gator, you'll need to have the following installed on your system:
+
+1. **Go** (version 1.25.0 or later)
+   - Download and install from [https://golang.org/dl/](https://golang.org/dl/)
+   - Verify installation: `go version`
+
+2. **PostgreSQL** (version 12 or later)
+   - Download and install from [https://www.postgresql.org/download/](https://www.postgresql.org/download/)
+   - Make sure the PostgreSQL server is running
+   - Create a database for Gator (e.g., `gator_db`)
+
+## Installation
+
+Install Gator using Go's built-in package manager:
+
+```bash
+go install github.com/gooneraki/blog-aggregator-go@latest
+```
+
+After installation, the `gator` command will be available in your terminal (make sure your `$GOPATH/bin` is in your `$PATH`).
+
+## Configuration
+
+Gator requires a configuration file to connect to your PostgreSQL database. Create a file called `.gatorconfig.json` in your home directory:
+
+```json
+{
+  "db_url": "postgres://username:password@localhost:5432/gator_db?sslmode=disable",
+  "current_user_name": ""
+}
+```
+
+Replace the database URL with your actual PostgreSQL connection details:
+- `username`: Your PostgreSQL username
+- `password`: Your PostgreSQL password
+- `localhost:5432`: Your PostgreSQL host and port
+- `gator_db`: Your database name
+- `sslmode=disable`: SSL mode (adjust as needed for your setup)
+
+The `current_user_name` field will be automatically set when you register or login as a user.
+
+## Database Setup
+
+Before using Gator, you'll need to run the database migrations to create the necessary tables. You can use a migration tool like [goose](https://github.com/pressly/goose) or manually execute the SQL files found in the `sql/schema/` directory in order.
+
+## Commands
+
+Gator provides the following commands:
+
+### User Management
+
+#### `register <name>`
+Create a new user and automatically log in as that user.
+```bash
+gator register john_doe
+```
+
+#### `login <name>`
+Switch to an existing user.
+```bash
+gator login john_doe
+```
+
+#### `users`
+List all registered users. The currently logged-in user is marked with "(current)".
+```bash
+gator users
+```
+
+#### `reset`
+Delete all users from the database (use with caution).
+```bash
+gator reset
+```
+
+### Feed Management
+
+#### `addfeed <name> <url>`
+Add a new RSS feed and automatically follow it. Requires being logged in.
+```bash
+gator addfeed "TechCrunch" "https://techcrunch.com/feed/"
+```
+
+#### `feeds`
+List all RSS feeds in the system with their details.
+```bash
+gator feeds
+```
+
+#### `follow <feed_url>`
+Follow an existing RSS feed. Requires being logged in.
+```bash
+gator follow "https://techcrunch.com/feed/"
+```
+
+#### `unfollow <feed_url>`
+Unfollow an RSS feed. Requires being logged in.
+```bash
+gator unfollow "https://techcrunch.com/feed/"
+```
+
+#### `following`
+List all feeds that the current user is following. Requires being logged in.
+```bash
+gator following
+```
+
+### Content Management
+
+#### `agg <time_between_requests>`
+Start the feed aggregation process. This will continuously fetch new posts from all feeds at the specified interval. The time format accepts durations like "1m", "30s", "2h", etc.
+```bash
+gator agg 1m
+```
+
+#### `browse [limit]`
+Browse the latest posts from feeds you're following. Optionally specify a limit for the number of posts to display (default is 2). Requires being logged in.
+```bash
+gator browse      # Shows 2 posts
+gator browse 10   # Shows 10 posts
+```
+
+## Usage Examples
+
+Here's a typical workflow for getting started with Gator:
+
+1. **Set up your configuration:**
+   ```bash
+   # Create .gatorconfig.json in your home directory with your database details
+   ```
+
+2. **Register a user:**
+   ```bash
+   gator register alice
+   ```
+
+3. **Add some feeds:**
+   ```bash
+   gator addfeed "Hacker News" "https://hnrss.org/frontpage"
+   gator addfeed "Go Blog" "https://go.dev/blog/feed.atom"
+   ```
+
+4. **Start aggregating posts:**
+   ```bash
+   gator agg 5m  # Fetch new posts every 5 minutes
+   ```
+
+5. **In another terminal, browse your posts:**
+   ```bash
+   gator browse 5
+   ```
+
+## Development
+
+After running `go build` or `go install`, you'll have a statically compiled binary that can run independently of the Go toolchain. The `gator` command is for production use, while `go run .` is primarily for development.
+
+## Project Structure
+
+- `main.go` - Entry point and command registration
+- `commands.go` - Command handling framework
+- `handler_*.go` - Individual command handlers
+- `internal/config/` - Configuration file management
+- `internal/database/` - Database queries and models (generated by sqlc)
+- `sql/schema/` - Database migration files
+- `rss_feed.go` - RSS feed fetching and parsing
+
+## Contributing
+
+This project uses Go modules for dependency management. To contribute:
+
+1. Clone the repository
+2. Make your changes
+3. Run tests: `go test ./...`
+4. Build the project: `go build`
+5. Submit a pull request
+
+## License
+
+This project is open source. Please check the repository for license details.
